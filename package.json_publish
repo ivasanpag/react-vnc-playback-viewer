@@ -1,0 +1,29 @@
+{
+    "name": "react-vnc-playback-viewer",
+    "description": "Simple react/typescript vnc playback viewer. Based on noVNC.",
+    "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ivasanpag/react-vnc-playback-viewer.git"
+    },
+    "keywords": [
+        "vnc",
+        "noVNC",
+        "react-vnc-playback-viewer"
+    ],
+    "main": "dist/index.js",
+    "module": "dist/index.es.js",
+    "exports": {
+        ".": {
+            "import": "./dist/index.es.js",
+            "require": "./dist/index.js"
+        }
+    },
+    "typings": "dist/types/lib/index.d.ts",
+    "dependencies": {},
+    "peerDependencies": {
+        "react": ">=18.3.1",
+        "react-scripts": ">=5.0.1",
+        "react-dom": ">=18.3.1"
+    }
+}

@@ -1,0 +1,107 @@
+{
+  "name": "react-vnc-playback-viewer",
+  "version": "0.0.1",
+  "description": "Simple react/typescript vnc playback viewer. Based on noVNC.",
+  "author": "Ivan Jose Sanchez Pagador",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "source": "src/lib/index.ts",
+  "typings": "dist/types/lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.es.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "keywords": [
+    "vnc",
+    "noVNC",
+    "react-vnc-playback-viewer"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ivasanpag/react-vnc-playback-viewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ivasanpag/react-vnc-playback-viewer/issues"
+  },
+  "dependencies": {
+    "@testing-library/jest-dom": "^6.4.5",
+    "@testing-library/react": "^15.0.7",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "^5.0.1",
+    "web-vitals": "^4.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "build:lib": "rollup -c",
+    "lint": "eslint . --ext .ts --ext .js",
+    "lint:fix": "npm run lint -- --fix",
+    "prepare": "is-ci || husky install",
+    "prepack": "npm run build:lib",
+    "prepublishOnly": "copy package.json package.json.bak && node prepublish.js",
+    "postpublish": "move package.json.bak package.json",
+    "submodule": "git submodule update --init --recursive"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.2.2",
+    "@semantic-release/changelog": "^6.0.0",
+    "@semantic-release/commit-analyzer": "^12.0.0",
+    "@semantic-release/git": "^10.0.0",
+    "@semantic-release/npm": "^12.0.1",
+    "@semantic-release/release-notes-generator": "^13.0.0",
+    "commitizen": "^4.2.4",
+    "cz-conventional-changelog": "^3.2.0",
+    "husky": "^9.0.11",
+    "is-ci": "^3.0.1",
+    "rollup": "^4.18.0",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "semantic-release": "^23.1.1",
+    "typescript": "^5.4.5"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}
