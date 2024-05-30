@@ -1,5 +1,5 @@
 import React, { forwardRef, ForwardRefRenderFunction, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { FakeWebSocket, Frame, VncPlaybackViewerHandle, VncPlaybackViewerProps } from "./types";
+import { FakeWebSocket, VncPlaybackViewerHandle, VncPlaybackViewerProps } from "./types";
 import RFB from "../noVNC/core/rfb";
 import { setCustomTimeout } from "./helper";
 
@@ -78,9 +78,9 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
       if (debug) console.error(...args);
     },
   };
-
   useEffect(() => {
     if (running) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       frameIndex = frameIndexAt;
       queueNextPacket();
     }
@@ -132,7 +132,7 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
       let delay = frame.timestamp - toffset;
       if (delay < 1) delay = 1;
 
-      setCustomTimeout(doPacket, delay)
+      setCustomTimeout(doPacket, delay);
     } else {
       window.setImmediate(doPacket);
     }
@@ -172,7 +172,6 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
 
   const handleDisconnect = (evt: Event) => {
     setRunning(false);
-    const detail = (evt as CustomEvent).detail;
     onDisconnect();
   };
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-template-curly-in-string */
 export const VNC_frame_data = [
     '{20{RFB\x20003\x2e008\x0a',
     '}65}RFB\x20003\x2e008\x0a',
