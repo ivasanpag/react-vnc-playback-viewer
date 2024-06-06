@@ -2,8 +2,12 @@ import React, { forwardRef, ForwardRefRenderFunction, useEffect, useImperativeHa
 import { FakeWebSocket, VncPlaybackViewerHandle, VncPlaybackViewerProps } from "./types";
 import RFB from "../noVNC/core/rfb";
 import { setCustomTimeout } from "./helper";
+import TimerComponent from "./TimerComponent";
 
-const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPlaybackViewerProps> = ({ frames, onDisconnect, onFinish, debug = false, style, className, loader }, ref) => {
+const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPlaybackViewerProps> = (
+  { frames, onDisconnect, onStop, onFinish, onResume, debug = false, showProgressBar = false, style, progressBarStyle, className, loader },
+  ref
+) => {
   useEffect(() => {
     // Immediate polyfill
     if (window.setImmediate === undefined) {
@@ -43,6 +47,7 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
   }, []);
 
   const [startTime, setStartTime] = useState<number | undefined>(undefined);
+  const [stopOffsetTime, setStopOffsetTime] = useState<number>(0);
   const [realtime, setRealtime] = useState<boolean>(true);
 
   const [trafficManagement, setTrafficManagement] = useState(true);
@@ -50,11 +55,29 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
   const [loading, setLoading] = useState<boolean>(false);
   const [resumed, setResumed] = useState<boolean>(false);
   const [frameIndexAt, setFrameIndexAt] = useState<number>(0);
+  const [progressTime, setProgressTime] = useState<number>(0);
 
   const rfbRef = useRef<RFB | undefined>(undefined);
   const wsRef = useRef<FakeWebSocket | undefined>(undefined);
   const screen = useRef<HTMLDivElement | null>(null);
-  let frameIndex = 0;
+  const [currentFrameIndex, setCurrentFrameIndex] = useState<number>(frameIndexAt);
+  const frameIndexRef = useRef<number>(0);
+
+  // timer component for progressbar
+  const timerRef = useRef<NodeJS.Timeout>();
+  useEffect(() => {
+    if (!showProgressBar) return;
+
+    const timer = () => {
+      if (frameIndexRef.current !== 0) setCurrentFrameIndex(frameIndexRef.current);
+    };
+
+    timerRef.current = setInterval(timer, 1000);
+    timer();
+    return () => {
+      clearInterval(timerRef.current);
+    };
+  }, [running, showProgressBar]);
 
   const start = (realtime: boolean) => {
     setStartTime(new Date().getTime());
@@ -65,6 +88,8 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
 
   const resume = () => {
     setRunning(true);
+    setStopOffsetTime((prev) => new Date().getTime() - prev);
+    if (onResume) onResume();
   };
 
   const logger = {
@@ -80,13 +105,13 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
   };
   useEffect(() => {
     if (running) {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      frameIndex = frameIndexAt;
+      frameIndexRef.current = frameIndexAt;
       queueNextPacket();
     }
     return () => {
       // Cleanup code if necessary
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
   const run = (realtime: boolean, trafficManagement?: boolean) => {
@@ -97,7 +122,7 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
 
     if (screen.current === undefined) return;
 
-    frameIndex = 0;
+    frameIndexRef.current = 0;
     wsRef.current = new FakeWebSocket();
     rfbRef.current = new RFB(screen.current, wsRef.current);
     rfbRef.current.viewOnly = true;
@@ -114,27 +139,49 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
 
   const queueNextPacket = () => {
     if (!running) return;
-    let frame = frames[frameIndex];
+    let frame = frames[frameIndexRef.current];
 
-    while (frameIndex < frames.length && frame.fromClient) {
-      frameIndex++;
-      frame = frames[frameIndex];
+    while (frameIndexRef.current < frames.length && frame.fromClient) {
+      frameIndexRef.current++;
+      frame = frames[frameIndexRef.current];
     }
 
-    if (frameIndex >= frames.length) {
+    if (frameIndexRef.current >= frames.length) {
       logger.info("Finished, no more frames");
       finish();
       return;
     }
 
     if (realtime) {
-      const toffset = new Date().getTime() - startTime!;
-      let delay = frame.timestamp - toffset;
+      let toffset = new Date().getTime() - startTime! - stopOffsetTime;
+      let delay = frame.timestamp - (toffset + progressTime);
       if (delay < 1) delay = 1;
 
       setCustomTimeout(doPacket, delay);
     } else {
       window.setImmediate(doPacket);
+    }
+  };
+
+  const queueNextPacketUntilFrame = (frameAt: number) => {
+    let frame = frames[frameIndexRef.current];
+    if (frameIndexRef.current > frameAt) return;
+
+    while (frameIndexRef.current < frames.length && frame.fromClient) {
+      frameIndexRef.current++;
+      frame = frames[frameIndexRef.current];
+    }
+
+    if (frameIndexRef.current >= frames.length) {
+      logger.info("Finished, no more frames");
+      finish();
+      return;
+    }
+
+    if (frame && frame.data) {
+      wsRef.current?.onmessage({ data: frame.data } as MessageEvent);
+      frameIndexRef.current++;
+      queueNextPacketUntilFrame(frameAt);
     }
   };
 
@@ -147,10 +194,10 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
       return;
     }
 
-    const frame = frames[frameIndex];
+    const frame = frames[frameIndexRef.current];
     if (frame && frame.data && running) {
       wsRef.current?.onmessage({ data: frame.data } as MessageEvent);
-      frameIndex++;
+      frameIndexRef.current++;
       queueNextPacket();
     }
   };
@@ -164,26 +211,43 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
       setRunning(false);
       wsRef.current!.onclose({ code: 1000, reason: "" } as CloseEvent);
       rfbRef.current = undefined;
-      frameIndex = frames.length + 1;
-      onFinish(new Date().getTime() - startTime!);
+      frameIndexRef.current = frames.length + 1;
+      if (onFinish) onFinish(new Date().getTime() - startTime!);
       setFrameIndexAt(0);
     }
   };
 
   const handleDisconnect = (evt: Event) => {
     setRunning(false);
-    onDisconnect();
+    if (onDisconnect) onDisconnect();
   };
 
   const stop = () => {
     setCustomTimeout.clearAll();
-    setFrameIndexAt(frameIndex);
+    setStopOffsetTime(new Date().getTime());
+    setFrameIndexAt(frameIndexRef.current);
     setRunning(false);
     setResumed(true);
+    if (onStop) onStop();
   };
 
   const handleCredentials = (evt: Event) => {
     rfbRef.current!.sendCredentials({ username: "Foo", password: "Bar", target: "Baz" });
+  };
+
+  const onProgressBarChange = (frame: string) => {
+    if (running) {
+      stop();
+    }
+    const time = frames[Number(frame)].timestamp - frames[frameIndexRef.current].timestamp;
+    setProgressTime(time);
+    // Only works when move in advance
+    queueNextPacketUntilFrame(Number(frame));
+    setFrameIndexAt(frameIndexRef.current);
+
+    if (running) {
+      setTimeout(resume, 1000);
+    }
   };
 
   useImperativeHandle(ref, () => ({
@@ -197,6 +261,7 @@ const VncPlaybackViewer: ForwardRefRenderFunction<VncPlaybackViewerHandle, VncPl
   return (
     <>
       {loading && (loader ?? <p>Loading...</p>)}
+      {showProgressBar ? <TimerComponent framesLength={frames.length} currentFrame={currentFrameIndex} progressBarStyle={progressBarStyle} onProgressBarChange={onProgressBarChange} /> : <></>}
       <div ref={screen} style={style} className={className}>
         {/* Render the VNC screen or any other UI elements */}
       </div>

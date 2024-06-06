@@ -45,12 +45,30 @@ export type VncPlaybackViewerHandle = {
 };
 
 export type VncPlaybackViewerProps = {
-  onIterationFinish?: () => void;
-  onDisconnect: () => void;
-  onFinish: (evt: any) => void;
+  onDisconnect?: () => void;
+  onFinish?: (evt: any) => void;
+  onResume?: () => void;
+  onStop?: () => void;
   debug?: boolean;
+  showProgressBar?: boolean;
   loader?: ReactNode;
   style?: object;
+  progressBarStyle?: object;
   className?: string;
   frames: Frame[];
 };
+
+export interface ReactRecorderProps {
+    command: string,
+    onStop: () => void,
+    onMissingAPIs: () => void,
+    onError: () => void,
+    onPause: () => void,
+    onStart: () => void,
+    onResume: () => void,
+    onUnmount: () => void,
+    gotStream: () => void,
+    blobOpts: object,
+    mediaOpts: object,
+
+}

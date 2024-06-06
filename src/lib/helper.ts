@@ -2,17 +2,16 @@ import base64 from "../noVNC/core/base64";
 import { CustomTimeout, Frame } from "./types";
 
 export const setCustomTimeout = (function (oldSetTimeout) {
-  const registered: { id: number, called: boolean }[] = [];
+  const registered: { id: number; called: boolean }[] = [];
 
   const f = function (callback: any, delay: number) {
     const timeoutId = oldSetTimeout(() => {
       callback();
       // Mark this timeout as called
-      const index = registered.findIndex(t => t.id === timeoutId);
+      const index = registered.findIndex((t) => t.id === timeoutId);
       if (index !== -1) registered[index].called = true;
-      
     }, delay);
-    
+
     registered.push({ id: timeoutId, called: false });
     return timeoutId;
   } as CustomTimeout;
@@ -24,7 +23,7 @@ export const setCustomTimeout = (function (oldSetTimeout) {
 
   f.clearCalled = async function () {
     for (let i = registered.length - 1; i >= 0; i--) {
-      if (registered[i].called) registered.splice(i, 1);  
+      if (registered[i].called) registered.splice(i, 1);
     }
   };
 
