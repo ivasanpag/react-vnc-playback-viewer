@@ -1,6 +1,6 @@
 {
   "name": "react-vnc-playback-viewer",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "description": "Simple react/typescript vnc playback viewer. Based on noVNC.",
   "author": "Ivan Jose Sanchez Pagador",
   "license": "MIT",
