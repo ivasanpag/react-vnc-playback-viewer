@@ -59,3 +59,7 @@ export const loadFrames = (framesData: string[]) => {
     console.log(e);
   }
 };
+
+module.exports = {
+  loadFrames
+}
