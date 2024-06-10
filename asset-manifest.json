@@ -1,0 +1,11 @@
+{
+  "files": {
+    "main.css": "/react-vnc-playback-viewer/static/css/main.4efb37a3.css",
+    "main.js": "/react-vnc-playback-viewer/static/js/main.be8d4fb4.js",
+    "index.html": "/react-vnc-playback-viewer/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.4efb37a3.css",
+    "static/js/main.be8d4fb4.js"
+  ]
+}
